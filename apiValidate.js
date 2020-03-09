@@ -52,6 +52,8 @@ async function executeSuite(env, filePath) {
     console.log("[API Runner][Suite] " + filePath );
     let stopOnFail = false;
 
+    files.sort();   // we want to run the files in the order they appear
+
     for (const file of files) {
         if (!stopOnFail && (file.indexOf("-test") >= 0 || file.indexOf("test-") >= 0)) {
             // Execute test

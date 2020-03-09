@@ -6,6 +6,16 @@ The MG-API-VALIDATOR also lets you extract data out of the response, to use in a
 
 Tests can be run individually, or as part of a single suite where all the test files belong in a single directory (marked *-test.json or test-*.json).
 
+## Installation
+
+```
+npm install mg-api-validator
+```
+
+```
+node_modules/mg-api-validator/bin/apiTest.js --config-file=./file.json test1.json test2.json
+```
+
 ## env :: Test environment
 
 The 'env' is a special variable scope that is shared among all the tests and is a place where variables can be parked for later.  The environment is specified using the --config-file=./xyz.json command line.  An example:
