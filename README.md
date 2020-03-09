@@ -142,7 +142,7 @@ A suite of tests is one where a directory of test files are all run and reported
 Running the tests is done via the command line an example:
 
 ```
-$ node apiValidate.js --config-file=./test-files/config.json ./test-files/ ./some-other-test.json
+$ node_modules/mg-api-validator/bin/apiTest.js --config-file=./test-files/config.json ./test-files/ ./some-other-test.json
 ```
 
 ## Release Notes
