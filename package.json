@@ -1,0 +1,28 @@
+{
+    "name": "mg-api-validator",
+    "private": false,
+    "version": "0.0.1",
+    "homepage": "https://github.com/MacLaurinGroup/mg-api-validator",
+    "description": "Manage an API suite of tests",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/MacLaurinGroup/mg-api-validator"
+    },
+    "keywords": [
+        "csv",
+        "node"
+    ],
+    "author": "MacLaurin Group",
+    "dependencies": {
+        "axios": "^0.18.0",
+        "dateformat": "^3.0.3",
+        "mustache": "^4.0.0",
+        "jsonwebtoken": "^8.3.0"
+    },
+    "url": "https://maclaurin.group/",
+    "license": "Apache-2.0"
+}
