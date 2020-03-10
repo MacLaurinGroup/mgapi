@@ -24,13 +24,14 @@ module.exports = class ClassTest {
       passed: false,
       networkTimeMs: 0,
       testTimeMs: 0,
-      bytesIn: -1,
+      bytes: 0,
       error: []
     };
 
     // Default some values
     this.metaData.response.status = this.metaData.response.status ? this.metaData.response.status : -1;
     this.metaData.stopOnFail = this.metaData.stopOnFail ? this.metaData.stopOnFail : false;
+    this.metaData.skipTest = this.metaData.skipTest ? this.metaData.skipTest : false;
   }
 
   stopOnFail() {
@@ -111,6 +112,10 @@ module.exports = class ClassTest {
    * @param {*} env 
    */
   async execute(context) {
+    if ( this.metaData.skipTest ){
+      return this.testResult;
+    }
+
     const request = this._getRequestData(context);
     const startDate = new Date().getTime();
     context.env.__time = startDate;
@@ -139,7 +144,7 @@ module.exports = class ClassTest {
 
   _validateResponse(context, res, request) {
     if (res.status) {
-      this.testResult.bytesIn = (res.headers["content-length"]) ? Number(res.headers["content-length"]) : -1;
+      this.testResult.bytes = (res.headers["content-length"]) ? Number(res.headers["content-length"]) : 0;
       this.testResult.ran = true;
       context.env.response = {
         headers: res.headers,
@@ -355,14 +360,18 @@ module.exports = class ClassTest {
     const keys = Object.keys(this.metaData.response.extract);
     for (const key of keys) {
       try {
-        const val = this._evaluate(env, this.metaData.response.extract[key], "env.response.data.");
-        if (val === "undefined") {
+        const v = this.__getData(this.metaData.response.extract[key], data);
+        if (typeof v === "undefined" || v === UNDEFINED_OBJ) {
           this.testResult.error.push("extract: [" + key + "]: not found");
         } else {
-          eval(key + "='" + val + "'");
+          if ( typeof v === "number" ){
+            eval(key + "= " + v );
+          }else{
+            eval(key + "='" + v + "'");
+          }
         }
       } catch (e) {
-        this.testResult.error.push("extract: [" + key + "]: " + e);
+        this.testResult.error.push("extract: Failed to find [" + this.metaData.response.extract[key] + "] for [" + key + "]: " + e);
       }
     }
 

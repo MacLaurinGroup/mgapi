@@ -25,7 +25,8 @@ const stats = {
     fail: 0,
 
     networkTimeMs: 0,
-    testTimeMs: 0
+    testTimeMs: 0,
+    bytes : 0
 };
 
 //---------------------------------------------------------------
@@ -49,7 +50,8 @@ async function executeSuite(context, filePath) {
         fail: 0,
 
         networkTimeMs: 0,
-        testTimeMs: 0
+        testTimeMs: 0,
+        bytes: 0
     };
 
     console.log("\r\n[API Runner][Suite] " + filePath);
@@ -70,6 +72,7 @@ async function executeSuite(context, filePath) {
 
                 suiteStats.networkTimeMs += tstResult.networkTimeMs;
                 suiteStats.testTimeMs += tstResult.testTimeMs;
+                suiteStats.bytes += tstResult.bytes;
 
                 if (tstResult.passed) {
                     suiteStats.pass += 1;
@@ -93,14 +96,15 @@ async function executeSuite(context, filePath) {
     console.log("\r\n[API Runner][Suite] Complete " + filePath);
 
     console.log(displayTable([
-        ['Status', 'Tests', 'Passed', 'Failed', 'Network Time', 'Test Time'],
-        [(suiteStats.tests === suiteStats.pass) ? "PASS" : "FAIL", suiteStats.tests, suiteStats.pass, suiteStats.fail, stats.networkTimeMs, suiteStats.testTimeMs]
+        ['Status', 'Tests', 'Passed', 'Failed', 'Bytes In', 'Network (ms)', 'Test (ms)'],
+        [(suiteStats.tests === suiteStats.pass) ? "PASS" : "FAIL", suiteStats.tests, suiteStats.pass, suiteStats.fail, suiteStats.bytes, stats.networkTimeMs, suiteStats.testTimeMs]
     ], true));
 
     // Update the main stats
     stats.tests += suiteStats.tests;
     stats.pass += suiteStats.pass;
     stats.fail += suiteStats.fail;
+    stats.bytes += suiteStats.bytes;
     stats.networkTimeMs += suiteStats.networkTimeMs;
     stats.testTimeMs += suiteStats.testTimeMs;
 }
@@ -152,7 +156,7 @@ function getPath(root, file) {
 
 const main = async () => {
     try {
-        console.log("API Validator v0.3.10\r\n    (c) 2020 MacLaurin Group   https://github.com/MacLaurinGroup/mg-api-validator");
+        console.log("API Validator v0.3.12\r\n    (c) 2020 MacLaurin Group   https://github.com/MacLaurinGroup/mg-api-validator");
 
         if (process.argv.length <= 2) {
             console.log("usage: --config-file=<path> [--log-dir=<path>] test1 test2 test3 ...")
@@ -234,8 +238,8 @@ const main = async () => {
         console.log("\r\n\r\n[API Runner] Complete");
 
         console.log(displayTable([
-            ['Status', 'Tests', 'Passed', 'Failed', 'Network Time', 'Test Time'],
-            [(stats.tests === stats.pass) ? "PASS" : "FAIL", stats.tests, stats.pass, stats.fail, stats.networkTimeMs, stats.testTimeMs]
+            ['Status', 'Tests', 'Passed', 'Failed', 'Bytes In', 'Network (ms)', 'Test (ms)'],
+            [(stats.tests === stats.pass) ? "PASS" : "FAIL", stats.tests, stats.pass, stats.fail, stats.bytes, stats.networkTimeMs, stats.testTimeMs]
         ], true));
 
         if (stats.tests === stats.pass) {
