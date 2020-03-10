@@ -128,7 +128,7 @@ Below is an example of a single test.
 
     // a list of the variables we want to pull out and put into the env
     "extract": {
-      "env.jwtToken": "${access}"
+      "env.jwtToken": "access"
     },
 
     // special function to expand/decode a JWT token
