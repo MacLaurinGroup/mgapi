@@ -73,7 +73,15 @@ module.exports = class ClassTest {
       fs.mkdirSync(context.logDir);
     }
 
-    this.logFileName = context.logDir + "/" + this.testResult.name.replace(" ", "_").replace("'", "_").replace("\"", "_").replace(":", "_").replace("}", "(").replace("{", ")").replace("\\", "_").replace("/", "_") + ".json";
+    this.logFileName = context.logDir + "/" + this.testResult.name
+      .replace(/\//g, "--") 
+      .replace(/ /g, "_")
+      .replace(/\'/g, "_")
+      .replace(/"/g, "_")
+      .replace(/:/g, "_")
+      .replace(/{/g, "(")
+      .replace(/}/g, "(")
+      .replace(/\\/g, "(") + ".json";
 
     try {
       const fileBody = JSON.stringify({
