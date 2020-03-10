@@ -28,7 +28,7 @@ module.exports = class ClassTest {
     };
 
     // Default some values
-    this.metaData.response.status = this.metaData.response.status ? this.metaData.response.status : 200;
+    this.metaData.response.status = this.metaData.response.status ? this.metaData.response.status : -1;
     this.metaData.stopOnFail = this.metaData.stopOnFail ? this.metaData.stopOnFail : false;
   }
 
@@ -67,6 +67,7 @@ module.exports = class ClassTest {
   async execute(context) {
     const request = this._getRequestData(context);
     const startDate = new Date().getTime();
+    context.env.__time = startDate;
 
     try {
       const response = await axios.request(request);
@@ -99,7 +100,7 @@ module.exports = class ClassTest {
         data: res.data
       };
 
-      if (res.status == this.metaData.response.status) {
+      if (this.metaData.response.status == -1 || res.status == this.metaData.response.status) {
 
         if (!this._hasKeys(env, res.data)) {
           return;

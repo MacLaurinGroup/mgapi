@@ -46,6 +46,19 @@ The 'headers'/'httpDefaults' are special blocks that setup the default for all o
 
 Everything else, can be then accessed by the tests using the syntax: ${env.config.url}.
 
+There are some constants available for use when required you need a little randomness.  The __now is recalculated every test run.
+
+```
+{
+  "env": {
+    __time: 1583843213037,
+    __yyyymmdd_: '2020-03-10',
+    __yyyymmdd: '20200310',
+    __now: 'Tue Mar 10 2020 12:26:53'
+  }
+}
+```
+
 ## Autonomy of single test
 
 A single test is a block of JSON, saved in a single file.  A file can have an array of tests, that will be executed one after another.

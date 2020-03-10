@@ -1,7 +1,7 @@
 {
     "name": "mg-api-validator",
     "private": false,
-    "version": "0.0.5",
+    "version": "0.0.6",
     "homepage": "https://github.com/MacLaurinGroup/mg-api-validator",
     "description": "Create and manage an API suite of tests without using any code",
     "main": "index.js",
@@ -24,9 +24,9 @@
     "author": "MacLaurin Group",
     "dependencies": {
         "axios": "^0.18.0",
-        "dateformat": "^3.0.3",
         "mustache": "^4.0.0",
-        "jsonwebtoken": "^8.3.0"
+        "jsonwebtoken": "^8.3.0",
+        "dateformat": "^3.0.3"
     },
     "url": "https://maclaurin.group/",
     "license": "Apache-2.0"
