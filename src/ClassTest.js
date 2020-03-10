@@ -60,7 +60,7 @@ module.exports = class ClassTest {
       b += "  // [PASS] ";
     }
 
-    return b + `ContentLength=${this.testResult.bytesIn}; networkTime=${this.testResult.networkTimeMs}ms; testTime=${this.testResult.testTimeMs}ms\r\n`;
+    return b + `ContentLength=${this.testResult.bytes}; networkTime=${this.testResult.networkTimeMs}ms; testTime=${this.testResult.testTimeMs}ms\r\n`;
   }
 
   //-------------------------------------------------------------
