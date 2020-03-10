@@ -16,28 +16,33 @@ npm install mg-api-validator
 node_modules/mg-api-validator/bin/apiTest.js --config-file=./file.json test1.json test2.json
 ```
 
-## env :: Test environment
+## context :: Test environment
 
-The 'env' is a special variable scope that is shared among all the tests and is a place where variables can be parked for later.  The environment is specified using the --config-file=./xyz.json command line.  An example:
+The 'env' is a special variable scope that is shared among all the tests and is a place where variables can be parked for later.  The context is loaded with the --config-file=./xyz.json command line.  An example:
 
 ```
 {
-  "config": {
+  "env" : {
+    "config": {
       "url": "https://api.myendpoint.org",
       "loginId": "someLoginId",
       "password": "somePassword"
+    }
   },
   "headers" : {
-      "Content-Type": "application/json"
+    "Content-Type": "application/json"
   },
   "httpDefaults" : {
-      "timeout" : 30000,
-      "maxContentLength" : 500000
-  }
+    "timeout" : 30000,
+    "maxContentLength" : 500000
+  },
+
+  "testTearDown" : "",
+  "testSetup" : "file://./common/setup.json"
 }
 ```
 
-The 'headers'/'httpDefaults' are special blocks that setup the default for all outgoing HTTP requests.  The 'headers' can be overridden by each test if need be.
+The 'headers'/'httpDefaults' are special blocks that setup the default for all outgoing HTTP requests.  The 'headers' can be overridden by each test if need be.  The testSetup/testTearDown are tests that are run at the start and end of the run.  Even if the tests fail the testTearDown will run.  If the testSetup fails, all the tests will not run.
 
 Everything else, can be then accessed by the tests using the syntax: ${env.config.url}.
 
@@ -95,8 +100,14 @@ Below is an example of a single test.
       },
       "serverTime": {
         "type": "number",
-        "required": true
-      }
+        "required": true,
+
+        // value has to equal; supports the ${} syntax
+        "eq" : 0
+      },
+
+      // Can be a simple type; where it is like an eq / required=true
+      "data['ca_name'].first" : "tom"
     },
 
     // a list of the variables we want to pull out and put into the env
@@ -112,6 +123,13 @@ Below is an example of a single test.
   }
 }
 ```
+
+Few notes on the checking for the response body
+
+* for simple keys, you can specify the name implicitly
+* for simple keys with a period in it, you can single quote the name;  eg "'ca.name'"
+* for complex keys, you can fully qualify it; "data['ca.name'].first"
+
 
 ### function onPass(env,data)() { .. }
 

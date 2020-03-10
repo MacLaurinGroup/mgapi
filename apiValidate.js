@@ -6,7 +6,10 @@ const fs = require("fs");
 const ClassTestLoader = require("./src/ClassTestLoader");
 
 // Default environment
-let env = {
+let context = {
+    env: {
+
+    },
     headers: {
         "Content-Type": "application/json"
     },
@@ -34,7 +37,7 @@ function loadConfig(filePath) {
 
 //---------------------------------------------------------------
 
-async function executeSuite(env, filePath) {
+async function executeSuite(context, filePath) {
     if (!filePath.endsWith("/")) {
         filePath += "/";
     }
@@ -44,12 +47,12 @@ async function executeSuite(env, filePath) {
         tests: 0,
         pass: 0,
         fail: 0,
-    
+
         networkTimeMs: 0,
         testTimeMs: 0
     };
 
-    console.log("[API Runner][Suite] " + filePath );
+    console.log("\r\n[API Runner][Suite] " + filePath);
     let stopOnFail = false;
 
     files.sort();   // we want to run the files in the order they appear
@@ -62,7 +65,7 @@ async function executeSuite(env, filePath) {
                 suiteStats.tests += 1;
 
                 console.log(tst.getBannerStart());
-                const tstResult = await tst.execute(env);
+                const tstResult = await tst.execute(context);
                 console.log(tst.getBannerResult());
 
                 suiteStats.networkTimeMs += tstResult.networkTimeMs;
@@ -74,7 +77,7 @@ async function executeSuite(env, filePath) {
                     suiteStats.fail += 1;
 
                     stopOnFail = tst.stopOnFail();
-                    if ( stopOnFail ){
+                    if (stopOnFail) {
                         break;
                     }
                 }
@@ -82,10 +85,10 @@ async function executeSuite(env, filePath) {
         }
     }
 
-    if ( stopOnFail ){
+    if (stopOnFail) {
         console.log("   ~~~ Test has: stopOnFail=true; further tests stopped in suite");
     }
- 
+
 
     console.log("\r\n[API Runner][Suite] Complete " + filePath);
     console.log(`   ~~~ Tests ${suiteStats.tests};  Passed=${suiteStats.pass};  Failed=${suiteStats.fail};   NetworkTime=${suiteStats.networkTimeMs}ms;   TestTime=${suiteStats.testTimeMs}ms`);
@@ -106,14 +109,15 @@ async function executeSuite(env, filePath) {
 
 //---------------------------------------------------------------
 
-async function executeFile(env, filePath) {
+async function executeFile(context, filePath) {
     const ctl = new ClassTestLoader(filePath);
 
+    let stopOnFail = false;
     for (const tst of ctl.getTests()) {
         stats.tests += 1;
 
         console.log(tst.getBannerStart());
-        const tstResult = await tst.execute(env);
+        const tstResult = await tst.execute(context);
         console.log(tst.getBannerResult());
 
         stats.networkTimeMs += tstResult.networkTimeMs;
@@ -123,22 +127,34 @@ async function executeFile(env, filePath) {
             stats.pass += 1;
         } else {
             stats.fail += 1;
-            if ( tst.stopOnFail() ){
+            if (tst.stopOnFail()) {
+                stopOnFail = true;
                 break;
             }
         }
     }
 
-    if ( tst.stopOnFail() && ctl.getTests().length > 0 ){
+    if (stopOnFail && ctl.getTests().length > 0) {
         console.log("   ~~~ Test has: stopOnFail=true; further tests stopped");
     }
 }
 
 //---------------------------------------------------------------
 
+function getPath(root, file) {
+    if (root.indexOf("/") === -1) {
+        root = process.cwd() + "/";
+    } else {
+        root = root.substring(0, root.lastIndexOf("/") + 1);
+    }
+    return root + file;
+}
+
+//---------------------------------------------------------------
+
 const main = async () => {
     try {
-        console.log("API Validator\r\n    (c) 2020 MacLaurin Group\r\n    https://github.com/MacLaurinGroup/mg-api-validator\r\n");
+        console.log("API Validator v0.3.9\r\n    (c) 2020 MacLaurin Group   https://github.com/MacLaurinGroup/mg-api-validator\r\n");
 
         if (process.argv.length <= 2) {
             console.log("usage: --config-file=<path> test1 test2 test3 ...")
@@ -148,7 +164,8 @@ const main = async () => {
         const testPaths = [];
         for (let x = 2; x < process.argv.length; x++) {
             if (process.argv[x].startsWith("--config-file=")) {
-                env = Object.assign(env, loadConfig(process.argv[x].substring("--config-file=".length)));
+                context.configPath = process.argv[x].substring("--config-file=".length);
+                context = Object.assign(context, loadConfig(context.configPath));
             } else {
                 testPaths.push(process.argv[x]);
             }
@@ -160,13 +177,24 @@ const main = async () => {
             process.exit(-1);
         }
 
+        // Perform the setup
+        if (typeof context.testSetup === "string" && context.testSetup !== "" ) {
+            const f = context.testSetup.substring("file://".length);
+            console.log("\r\n[API Runner][testSetup] " + f);
+            await executeFile(context, getPath(context.configPath, f));
+            if ( stats.fail > 0 ){
+                process.exist(-1);
+            }
+        }
+
+
         // Run through the tests
         for (const testPath of testPaths) {
             try {
                 if (fs.lstatSync(testPath).isDirectory()) {
-                    await executeSuite(env, testPath);
+                    await executeSuite(context, testPath);
                 } else {
-                    await executeFile(env, testPath);
+                    await executeFile(context, testPath);
                 }
             } catch (e) {
                 console.log(testPath + "; " + e);
@@ -174,8 +202,17 @@ const main = async () => {
             }
         }
 
+
+        // Perform the testTearDown
+        if (typeof context.testTearDown === "string" && context.testTearDown !== "") {
+            const f = context.testTearDown.substring("file://".length);
+            console.log("\r\n[API Runner][testTearDown] " + f);
+            await executeFile(context, getPath(context.configPath, f));
+        }
+
+
         // Tests Complete
-        console.log("\r\n\r\n[API Runner][All] Complete");
+        console.log("\r\n\r\n[API Runner][All] Complete ___________________________________________");
         console.log(`   ~~~ Tests ${stats.tests};  Passed=${stats.pass};  Failed=${stats.fail};   NetworkTime=${stats.networkTimeMs}ms;   TestTime=${stats.testTimeMs}ms`);
 
         if (stats.tests === stats.pass) {

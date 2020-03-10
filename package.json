@@ -18,8 +18,8 @@
         "rest",
         "node"
     ],
-    "bin" : {
-        "api-validator" : "bin/apiTest.js"
+    "bin": {
+        "api-validator": "bin/apiTest.js"
     },
     "author": "MacLaurin Group",
     "dependencies": {
