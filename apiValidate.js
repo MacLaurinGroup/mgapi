@@ -4,11 +4,11 @@
 
 const fs = require("fs");
 const ClassTestLoader = require("./src/ClassTestLoader");
+const dateFormat = require("dateformat");
 
 // Default environment
 let context = {
     env: {
-
     },
     headers: {
         "Content-Type": "application/json"
@@ -91,13 +91,11 @@ async function executeSuite(context, filePath) {
 
 
     console.log("\r\n[API Runner][Suite] Complete " + filePath);
-    console.log(`   ~~~ Tests ${suiteStats.tests};  Passed=${suiteStats.pass};  Failed=${suiteStats.fail};   NetworkTime=${suiteStats.networkTimeMs}ms;   TestTime=${suiteStats.testTimeMs}ms`);
 
-    if (suiteStats.tests === suiteStats.pass) {
-        console.log("   ~~~ PASS");
-    } else {
-        console.log("   ~~~ FAIL");
-    }
+    console.log(displayTable([
+        ['Status', 'Tests', 'Passed', 'Failed', 'Network Time', 'Test Time'],
+        [(suiteStats.tests === suiteStats.pass) ? "PASS" : "FAIL", suiteStats.tests, suiteStats.pass, suiteStats.fail, stats.networkTimeMs, suiteStats.testTimeMs]
+    ], true));
 
     // Update the main stats
     stats.tests += suiteStats.tests;
@@ -171,6 +169,13 @@ const main = async () => {
             }
         }
 
+        // Some helper constants
+        context.env.__time = new Date().getTime();
+        context.env.__yyyymmdd_ = dateFormat(new Date(), "yyyy-mm-dd");
+        context.env.__yyyymmdd = dateFormat(new Date(), "yyyymmdd");
+        context.env.__now = dateFormat();
+
+
         if (testPaths.length === 0) {
             console.log("no tests specified")
             console.log("usage: --config-file=<path> test1 test2 test3 ...")
@@ -178,11 +183,11 @@ const main = async () => {
         }
 
         // Perform the setup
-        if (typeof context.testSetup === "string" && context.testSetup !== "" ) {
+        if (typeof context.testSetup === "string" && context.testSetup !== "") {
             const f = context.testSetup.substring("file://".length);
             console.log("\r\n[API Runner][testSetup] " + f);
             await executeFile(context, getPath(context.configPath, f));
-            if ( stats.fail > 0 ){
+            if (stats.fail > 0) {
                 process.exist(-1);
             }
         }
@@ -212,14 +217,16 @@ const main = async () => {
 
 
         // Tests Complete
-        console.log("\r\n\r\n[API Runner][All] Complete ___________________________________________");
-        console.log(`   ~~~ Tests ${stats.tests};  Passed=${stats.pass};  Failed=${stats.fail};   NetworkTime=${stats.networkTimeMs}ms;   TestTime=${stats.testTimeMs}ms`);
+        console.log("\r\n\r\n[API Runner] Complete");
+
+        console.log(displayTable([
+            ['Status', 'Tests', 'Passed', 'Failed', 'Network Time', 'Test Time'],
+            [(stats.tests === stats.pass) ? "PASS" : "FAIL", stats.tests, stats.pass, stats.fail, stats.networkTimeMs, stats.testTimeMs]
+        ], true));
 
         if (stats.tests === stats.pass) {
-            console.log("   ~~~ PASS");
             process.exit(1);
         } else {
-            console.log("   ~~~ FAIL");
             process.exit(-1);
         }
 
@@ -227,5 +234,49 @@ const main = async () => {
         console.log(e);
     }
 };
+
+function displayTable(rowsOfRows, firstRow) {
+    let b = "";
+    const rowSize = Array(rowsOfRows[0].length).fill(0);
+
+    for (let x = 0; x < rowsOfRows.length; x++) {
+        for (let r = 0; r < rowsOfRows[x].length; r++) {
+            rowsOfRows[x][r] = rowsOfRows[x][r] + "";
+            if (rowsOfRows[x][r].length + 2 > rowSize[r]) {
+                rowSize[r] = rowsOfRows[x][r].length + 2;
+            }
+        }
+    }
+
+    // render line
+    let l = "+";
+    for (let r = 0; r < rowSize.length; r++) {
+        l += "-".repeat(rowSize[r]);
+        l += "+";
+    }
+    l += "\r\n";
+
+    b = l;
+
+    for (let r = 0; r < rowsOfRows.length; r++) {
+        b += "|";
+        for (let c = 0; c < rowsOfRows[r].length; c++) {
+            rowsOfRows[r][c] = rowsOfRows[r][c] + "";
+            b += " ".repeat(rowSize[c] - rowsOfRows[r][c].length-1);
+            b += rowsOfRows[r][c];
+            b += " |";
+        }
+
+        b += "\r\n";
+
+        if (firstRow && r === 0) {
+            b += l;
+        }
+    }
+    b += l;
+    b += "\r\n";
+
+    return b;
+}
 
 main();
