@@ -99,7 +99,7 @@ module.exports = class ClassTest {
         data: res.data
       };
 
-      if (typeof this.metaData.response.status === "undefined" || res.status == this.metaData.response.status) {
+      if (res.status == this.metaData.response.status) {
 
         if (!this._hasKeys(env, res.data)) {
           return;
