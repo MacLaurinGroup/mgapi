@@ -152,7 +152,7 @@ function getPath(root, file) {
 
 const main = async () => {
     try {
-        console.log("API Validator v0.3.9\r\n    (c) 2020 MacLaurin Group   https://github.com/MacLaurinGroup/mg-api-validator\r\n");
+        console.log("API Validator v0.3.9\r\n    (c) 2020 MacLaurin Group   https://github.com/MacLaurinGroup/mg-api-validator");
 
         if (process.argv.length <= 2) {
             console.log("usage: --config-file=<path> test1 test2 test3 ...")
@@ -160,18 +160,30 @@ const main = async () => {
         }
 
         const testPaths = [];
+        let logDir = null;
         for (let x = 2; x < process.argv.length; x++) {
             if (process.argv[x].startsWith("--config-file=")) {
                 context.configPath = process.argv[x].substring("--config-file=".length);
                 context = Object.assign(context, loadConfig(context.configPath));
+            } else if (process.argv[x].startsWith("--log-dir=")) {
+                logDir = process.argv[x].substring("--log-dir=".length);
             } else {
                 testPaths.push(process.argv[x]);
             }
         }
 
+        // Create the logDir
+        if ( logDir != null ){
+            context.logDir = getPath(logDir, "api-log-" + dateFormat(new Date(), "yyyymmdd-HHMMss") );
+            console.log("    --log-dir=" + context.logDir );
+        } else {
+            context.logDir = null;
+        }
+
         // Some helper constants
         context.env.__time = new Date().getTime();
         context.env.__yyyymmdd_ = dateFormat(new Date(), "yyyy-mm-dd");
+        context.env.__yyyymmddhhMMss_ = dateFormat(new Date(), "yyyy-mm-dd--HH:MM:ss");
         context.env.__yyyymmdd = dateFormat(new Date(), "yyyymmdd");
         context.env.__now = dateFormat();
 
@@ -182,13 +194,15 @@ const main = async () => {
             process.exit(-1);
         }
 
+        console.log("");
+
         // Perform the setup
         if (typeof context.testSetup === "string" && context.testSetup !== "") {
             const f = context.testSetup.substring("file://".length);
             console.log("\r\n[API Runner][testSetup] " + f);
             await executeFile(context, getPath(context.configPath, f));
             if (stats.fail > 0) {
-                process.exist(-1);
+                process.exit(-1);
             }
         }
 
@@ -225,7 +239,7 @@ const main = async () => {
         ], true));
 
         if (stats.tests === stats.pass) {
-            process.exit(1);
+            process.exit(0);
         } else {
             process.exit(-1);
         }

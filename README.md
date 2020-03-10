@@ -6,6 +6,8 @@ The MG-API-VALIDATOR also lets you extract data out of the response, to use in a
 
 Tests can be run individually, or as part of a single suite where all the test files belong in a single directory (marked *-test.json or test-*.json).
 
+You can optionally log out the request/response upon failure into a folder for later investigation.
+
 ## Installation
 
 ```
@@ -53,6 +55,7 @@ There are some constants available for use when required you need a little rando
   "env": {
     __time: 1583843213037,
     __yyyymmdd_: '2020-03-10',
+    __yyyymmddhhMMss_ : "2020-03-10T12:26:53",
     __yyyymmdd: '20200310',
     __now: 'Tue Mar 10 2020 12:26:53'
   }
@@ -173,8 +176,10 @@ A suite of tests is one where a directory of test files are all run and reported
 Running the tests is done via the command line an example:
 
 ```
-$ node_modules/mg-api-validator/bin/apiTest.js --config-file=./test-files/config.json ./test-files/ ./some-other-test.json
+$ node_modules/mg-api-validator/bin/apiTest.js --config-file=./test-files/config.json --log-dir=/tmp/ ./some-other-test.json
 ```
+
+If you specify the ---log-dir, a temporary folder will be created, where any errors will be logged, with a complete dump of the request and response.
 
 ## Release Notes
 

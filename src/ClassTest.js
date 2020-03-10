@@ -4,6 +4,7 @@ const fs = require("fs");
 const axios = require("axios");
 const jwt = require("jsonwebtoken");
 
+const UNDEFINED_OBJ = {};
 const FUNCTION_ONPASS = "function onPass(env,data)";
 const FUNCTION_HELPER = `
 
@@ -18,7 +19,7 @@ module.exports = class ClassTest {
     this.localPath = localPath;
     this.metaData = metaData;
     this.testResult = {
-      name: (this.metaData.name) ? this.metaData.name : "Test#?",
+      name: (this.metaData.name) ? this.metaData.name : "Test-XXX",
       ran: false,
       passed: false,
       networkTimeMs: 0,
@@ -46,7 +47,11 @@ module.exports = class ClassTest {
     let b = "";
     if (!this.testResult.passed) {
       for (const er of this.testResult.error) {
-        b += `  || ${er}\r\n`;
+        b += `   | ${er}\r\n`;
+      }
+
+      if ( typeof this.logFileName != "undefined" ){
+        b += "   | logFile=" + this.logFileName + "\r\n";
       }
 
       b += "  // [FAIL] ";
@@ -59,7 +64,40 @@ module.exports = class ClassTest {
 
   //-------------------------------------------------------------
 
-  /**
+  async logError(context, request, response) {
+    if (context.logDir == null) {
+      return;
+    }
+
+    if (!fs.existsSync(context.logDir)) {
+      fs.mkdirSync(context.logDir);
+    }
+
+    this.logFileName = context.logDir + "/" + this.testResult.name.replace(" ", "_").replace("'", "_").replace("\"", "_").replace(":", "_").replace("\\", "_").replace("/", "_") + ".json";
+
+    try {
+      const fileBody = JSON.stringify({
+        response: {
+          status: response.status ? response.status : null,
+          data: response.data ? response.data : null
+        },
+        request: {
+          url: request.url,
+          method: request.method,
+          headers: request.headers,
+          body: request.body ? request.body : ""
+        },
+        env : context.env
+      }, null, "  ");
+
+      fs.writeFileSync(this.logFileName, fileBody);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+
+  /** -------------------------------------------------------------
    * Executes the test internally
    * 
    * @param {*} env 
@@ -73,11 +111,11 @@ module.exports = class ClassTest {
       const response = await axios.request(request);
       this.testResult.networkTimeMs = new Date().getTime() - startDate;
 
-      this._validateResponse(context.env, response);
+      this._validateResponse(context, response, request);
     } catch (error) {
       if (error.response) {
         this.testResult.networkTimeMs = new Date().getTime() - startDate;
-        this._validateResponse(context.env, error.response);
+        this._validateResponse(context, error.response, request);
       } else {
         console.log(error)
       }
@@ -91,34 +129,39 @@ module.exports = class ClassTest {
 
   //-------------------------------------------------------------
 
-  _validateResponse(env, res) {
+  _validateResponse(context, res, request) {
     if (res.status) {
       this.testResult.bytesIn = (res.headers["content-length"]) ? Number(res.headers["content-length"]) : -1;
       this.testResult.ran = true;
-      env.response = {
+      context.env.response = {
         headers: res.headers,
         data: res.data
       };
 
       if (this.metaData.response.status == -1 || res.status == this.metaData.response.status) {
 
-        if (!this._hasKeys(env, res.data)) {
+        if (!this._hasKeys(context.env, res.data)) {
+          this.logError(context, request, res);
           return;
         }
 
-        if (!this._dataType(env, res.data)) {
+        if (!this._dataType(context.env, res.data)) {
+          this.logError(context, request, res);
           return;
         }
 
-        if (!this._extract(env, res.data)) {
+        if (!this._extract(context.env, res.data)) {
+          this.logError(context, request, res);
           return;
         }
 
-        if (!this._extractJWT(env, res.data)) {
+        if (!this._extractJWT(context.env, res.data)) {
+          this.logError(context, request, res);
           return;
         }
 
-        if (!this._onPass(env, res.data)) {
+        if (!this._onPass(context.env, res.data)) {
+          this.logError(context, request, res);
           return;
         }
 
@@ -126,6 +169,7 @@ module.exports = class ClassTest {
       } else {
         this.testResult.error.push(`env.response.status=${res.status}; expected ${this.metaData.response.status}`);
         this.testResult.passed = false;
+        this.logError(context, request, res);
       }
     }
   }
@@ -190,15 +234,21 @@ module.exports = class ClassTest {
 
   __getData(key, data) {
 
-    if (key.startsWith("data[") || key.startsWith("data.")) {
-      // full path
-      return eval(key);
-    } else {
-      if (key.startsWith("'") && key.endsWith("'")) {
-        return eval("data[" + key + "]");
+    try {
+
+      if (key.startsWith("data[") || key.startsWith("data.")) {
+        // full path
+        return eval(key);
       } else {
-        return eval("data." + key);
+        if (key.startsWith("'") && key.endsWith("'")) {
+          return eval("data[" + key + "]");
+        } else {
+          return eval("data." + key);
+        }
       }
+
+    } catch (e) {
+      return UNDEFINED_OBJ;
     }
   }
 
@@ -218,14 +268,14 @@ module.exports = class ClassTest {
         // implicit eq
         const v = this.__getData(key, data);
 
-        if (v != null && typeof v == undefined) {
+        if (v != null && typeof v == undefined || v === UNDEFINED_OBJ) {
           this.testResult.error.push(`dataType: [${key}] not present`);
         } else {
-          if ( check !== null && typeof check === "string" ){
+          if (check !== null && typeof check === "string") {
             check = this._evaluate(env, check)
           }
 
-          if ( check != v ){
+          if (check != v) {
             this.testResult.error.push(`dataType: [${key}] expecting=${check}; was ${v}`);
           }
         }
@@ -240,7 +290,7 @@ module.exports = class ClassTest {
 
         const v = this.__getData(key, data);
 
-        if (typeof v === "undefined") {
+        if (typeof v === "undefined" || v === UNDEFINED_OBJ) {
           if (check.required) {
             this.testResult.error.push("dataType: [" + key + "] required=true; not present");
           }
@@ -254,11 +304,11 @@ module.exports = class ClassTest {
         } else if (typeof check.eq != "undefined") {
 
           let rhs = check.eq;
-          if ( rhs !== null && typeof rhs === "string" ){
+          if (rhs !== null && typeof rhs === "string") {
             rhs = this._evaluate(env, rhs);
           }
 
-          if ( rhs != v ){
+          if (rhs != v) {
             this.testResult.error.push(`dataType: [${key}] expecting=${rhs}; was ${v}`);
           }
 
@@ -279,7 +329,7 @@ module.exports = class ClassTest {
     for (const key of this.metaData.response.hasKey) {
       const v = this.__getData(key, data);
 
-      if ( typeof v === "undefined") {
+      if (typeof v === "undefined" || v === UNDEFINED_OBJ) {
         this.testResult.error.push("hasKey: [" + key + "] not defined");
       }
     }
