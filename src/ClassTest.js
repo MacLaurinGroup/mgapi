@@ -94,7 +94,7 @@ module.exports = class ClassTest {
           url: request.url,
           method: request.method,
           headers: request.headers,
-          body: request.body ? request.body : ""
+          data: request.data ? request.data : ""
         },
         env : context.env
       }, null, "  ");
@@ -432,6 +432,12 @@ module.exports = class ClassTest {
 
         const evaluated = eval(curMatch[1]);
         obj = obj.substring(0, curMatch.index) + evaluated + obj.substring(curMatch.index + curMatch[0].length);
+      }
+
+    } else if (Array.isArray(obj)) {
+
+      for ( let x=0; x < obj.length; x++ ){
+        obj[x] = this._evaluate( env, obj[x] );
       }
 
     } else if (typeof obj === "object") {
