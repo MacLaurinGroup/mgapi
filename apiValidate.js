@@ -26,7 +26,7 @@ const stats = {
 
     networkTimeMs: 0,
     testTimeMs: 0,
-    bytes : 0
+    bytes: 0
 };
 
 //---------------------------------------------------------------
@@ -154,9 +154,55 @@ function getPath(root, file) {
 
 //---------------------------------------------------------------
 
+function displayTable(rowsOfRows, firstRow) {
+    let b = "";
+    const rowSize = Array(rowsOfRows[0].length).fill(0);
+
+    for (let x = 0; x < rowsOfRows.length; x++) {
+        for (let r = 0; r < rowsOfRows[x].length; r++) {
+            rowsOfRows[x][r] = rowsOfRows[x][r] + "";
+            if (rowsOfRows[x][r].length + 2 > rowSize[r]) {
+                rowSize[r] = rowsOfRows[x][r].length + 2;
+            }
+        }
+    }
+
+    // render line
+    let l = "+";
+    for (let r = 0; r < rowSize.length; r++) {
+        l += "-".repeat(rowSize[r]);
+        l += "+";
+    }
+    l += "\r\n";
+
+    b = l;
+
+    for (let r = 0; r < rowsOfRows.length; r++) {
+        b += "|";
+        for (let c = 0; c < rowsOfRows[r].length; c++) {
+            rowsOfRows[r][c] = rowsOfRows[r][c] + "";
+            b += " ".repeat(rowSize[c] - rowsOfRows[r][c].length - 1);
+            b += rowsOfRows[r][c];
+            b += " |";
+        }
+
+        b += "\r\n";
+
+        if (firstRow && r === 0) {
+            b += l;
+        }
+    }
+    b += l;
+    b += "\r\n";
+
+    return b;
+}
+
+//---------------------------------------------------------------
+
 const main = async () => {
     try {
-        console.log("API Validator v0.3.12\r\n    (c) 2020 MacLaurin Group   https://github.com/MacLaurinGroup/mg-api-validator");
+        console.log("API Validator v0.3.19\r\n    (c) 2020 MacLaurin Group   https://github.com/MacLaurinGroup/mg-api-validator");
 
         if (process.argv.length <= 2) {
             console.log("usage: --config-file=<path> [--log-dir=<path>] test1 test2 test3 ...")
@@ -177,9 +223,9 @@ const main = async () => {
         }
 
         // Create the logDir
-        if ( logDir != null ){
-            context.logDir = getPath(logDir, "api-log-" + dateFormat(new Date(), "yyyymmdd-HHMMss") );
-            console.log("    --log-dir=" + context.logDir );
+        if (logDir != null) {
+            context.logDir = getPath(logDir, "api-log-" + dateFormat(new Date(), "yyyymmdd-HHMMss"));
+            console.log("    --log-dir=" + context.logDir);
         } else {
             context.logDir = null;
         }
@@ -252,49 +298,5 @@ const main = async () => {
         console.log(e);
     }
 };
-
-function displayTable(rowsOfRows, firstRow) {
-    let b = "";
-    const rowSize = Array(rowsOfRows[0].length).fill(0);
-
-    for (let x = 0; x < rowsOfRows.length; x++) {
-        for (let r = 0; r < rowsOfRows[x].length; r++) {
-            rowsOfRows[x][r] = rowsOfRows[x][r] + "";
-            if (rowsOfRows[x][r].length + 2 > rowSize[r]) {
-                rowSize[r] = rowsOfRows[x][r].length + 2;
-            }
-        }
-    }
-
-    // render line
-    let l = "+";
-    for (let r = 0; r < rowSize.length; r++) {
-        l += "-".repeat(rowSize[r]);
-        l += "+";
-    }
-    l += "\r\n";
-
-    b = l;
-
-    for (let r = 0; r < rowsOfRows.length; r++) {
-        b += "|";
-        for (let c = 0; c < rowsOfRows[r].length; c++) {
-            rowsOfRows[r][c] = rowsOfRows[r][c] + "";
-            b += " ".repeat(rowSize[c] - rowsOfRows[r][c].length-1);
-            b += rowsOfRows[r][c];
-            b += " |";
-        }
-
-        b += "\r\n";
-
-        if (firstRow && r === 0) {
-            b += l;
-        }
-    }
-    b += l;
-    b += "\r\n";
-
-    return b;
-}
 
 main();

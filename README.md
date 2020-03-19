@@ -85,6 +85,11 @@ Below is an example of a single test.
     // any addition headers 
     "headers": {},
 
+    // any query params that can be added; any value will be auto-encoded to be URL safe
+    "params" : {
+      "key" : "value"
+    },
+
     // the body of the request, again, the env vars can be used
     "body": {
       "loginId": "${env.config.loginId}",
@@ -97,6 +102,12 @@ Below is an example of a single test.
 
     // the status code we expect to see
     "status": 200,
+
+    // the content-type expected; it need only match on part; defaults to 'json'
+    "contentType" : "json",
+
+    // if the response is text, then checks to see if this string is part of the data; if an array, all have to be contained
+    "containsString" : ["must be present"],
 
     // if the response is an object, then does the object have these top-level keys
     "hasKey": [
@@ -126,7 +137,7 @@ Below is an example of a single test.
       "data['ca_name'].first" : "tom"
     },
 
-    // a list of the variables we want to pull out and put into the env
+    // if the response is an object, a list of the variables we want to pull out and put into the env
     "extract": {
       "env.jwtToken": "access"
     },
@@ -146,6 +157,15 @@ Few notes on the checking for the response body
 * for simple keys with a period in it, you can single quote the name;  eg "'ca.name'"
 * for complex keys, you can fully qualify it; "data['ca.name'].first"
 
+As you build up a library of tests, you can reference them into a single suite, by using the 'testImport' keyword inside a test file.   This will load the file referenced, relative to the current test file, and run that as part of the suite.
+
+```
+{
+  "testImport" : "../common/another-test.json"
+}
+```
+
+
 
 ### function onPass(env,data)() { .. }
 
@@ -158,6 +178,8 @@ function onPass(env,data)() {
   }
 }
 ```
+
+The type of data depends on the response type; for text/* it will be a string, for JSON type of responses, it will be a structure you can navigate.
 
 There is a helper method, fail(), that lets you easily report an a test fail to the runner.
 
@@ -183,4 +205,10 @@ If you specify the ---log-dir, a temporary folder will be created, where any err
 
 ## Release Notes
 
+* 2020-03-19: 
+  * Added 'testImport'
+  * Added 'contentType' test to the response
+  * Added 'containsString' for testing text/* responses
+  * Added 'params' for specifying query params
+  * Refactored code for readability
 * 2020-03-09: Initial release

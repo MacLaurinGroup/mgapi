@@ -1,143 +1,12 @@
 "use strict;"
 
-const fs = require("fs");
-const axios = require("axios");
-const jwt = require("jsonwebtoken");
-
-const UNDEFINED_OBJ = {};
-const FUNCTION_ONPASS = "function onPass(env,data)";
-const FUNCTION_HELPER = `
-
-  function fail(message){
-    throw new Error(message);
-  }
-
-`;
-
-module.exports = class ClassTest {
+module.exports = class ClassTest extends require("./ClassTestString") {
   constructor(metaData, localPath) {
-    this.localPath = localPath;
-    this.metaData = metaData;
-    this.testResult = {
-      name: (this.metaData.name) ? this.metaData.name : "Test-XXX",
-      ran: false,
-      passed: false,
-      networkTimeMs: 0,
-      testTimeMs: 0,
-      bytes: 0,
-      error: []
-    };
-
-    // Default some values
-    this.metaData.response.status = this.metaData.response.status ? this.metaData.response.status : -1;
-    this.metaData.stopOnFail = this.metaData.stopOnFail ? this.metaData.stopOnFail : false;
-    this.metaData.skipTest = this.metaData.skipTest ? this.metaData.skipTest : false;
+    super(metaData,localPath);
   }
 
   stopOnFail() {
     return this.metaData.stopOnFail;
-  }
-
-  getBannerStart() {
-    return `--\\\\ ${this.testResult.name}`;
-  }
-
-  //-------------------------------------------------------------
-
-  getBannerResult() {
-    let b = "";
-    if (!this.testResult.passed) {
-      for (const er of this.testResult.error) {
-        b += `   | ${er}\r\n`;
-      }
-
-      if ( typeof this.logFileName != "undefined" ){
-        b += "   | logFile=" + this.logFileName + "\r\n";
-      }
-
-      b += "  // [FAIL] ";
-    } else {
-      b += "  // [PASS] ";
-    }
-
-    return b + `ContentLength=${this.testResult.bytes}; networkTime=${this.testResult.networkTimeMs}ms; testTime=${this.testResult.testTimeMs}ms\r\n`;
-  }
-
-  //-------------------------------------------------------------
-
-  async logError(context, request, response) {
-    if (context.logDir == null) {
-      return;
-    }
-
-    if (!fs.existsSync(context.logDir)) {
-      fs.mkdirSync(context.logDir);
-    }
-
-    this.logFileName = context.logDir + "/" + this.testResult.name
-      .replace(/\//g, "--") 
-      .replace(/ /g, "_")
-      .replace(/\'/g, "_")
-      .replace(/"/g, "_")
-      .replace(/:/g, "_")
-      .replace(/{/g, "(")
-      .replace(/}/g, "(")
-      .replace(/\\/g, "(") + ".json";
-
-    try {
-      const fileBody = JSON.stringify({
-        response: {
-          status: response.status ? response.status : null,
-          data: response.data ? response.data : null
-        },
-        request: {
-          url: request.url,
-          method: request.method,
-          headers: request.headers,
-          data: request.data ? request.data : ""
-        },
-        env : context.env
-      }, null, "  ");
-
-      fs.writeFileSync(this.logFileName, fileBody);
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
-
-  /** -------------------------------------------------------------
-   * Executes the test internally
-   * 
-   * @param {*} env 
-   */
-  async execute(context) {
-    if ( this.metaData.skipTest ){
-      return this.testResult;
-    }
-
-    const request = this._getRequestData(context);
-    const startDate = new Date().getTime();
-    context.env.__time = startDate;
-
-    try {
-      const response = await axios.request(request);
-      this.testResult.networkTimeMs = new Date().getTime() - startDate;
-
-      this._validateResponse(context, response, request);
-    } catch (error) {
-      if (error.response) {
-        this.testResult.networkTimeMs = new Date().getTime() - startDate;
-        this._validateResponse(context, error.response, request);
-      } else {
-        console.log(error)
-      }
-    } finally {
-      this.testResult.testTimeMs = new Date().getTime() - startDate;
-    }
-
-    delete context.env.response;
-    return this.testResult;
   }
 
   //-------------------------------------------------------------
@@ -153,25 +22,46 @@ module.exports = class ClassTest {
 
       if (this.metaData.response.status == -1 || res.status == this.metaData.response.status) {
 
-        if (!this._hasKeys(context.env, res.data)) {
+        if ( !res.headers["content-type"].includes(this.metaData.response.contentType) ){
+          this.testResult.error.push(`env.response.contentType='${res.headers["content-type"]}'; expected='${this.metaData.response.contentType}'`);
+          this.testResult.passed = false;
           this.logError(context, request, res);
           return;
         }
 
-        if (!this._dataType(context.env, res.data)) {
-          this.logError(context, request, res);
-          return;
-        }
+        if ( typeof res.data === "string" ){
+          // The data is string so these tests are run
 
-        if (!this._extract(context.env, res.data)) {
-          this.logError(context, request, res);
-          return;
-        }
+          if (!this._containsString(context.env, res.data)) {
+            this.logError(context, request, res);
+            return;
+          }
 
+        }else{
+          // The data is an object so these tests are run
+
+          if (!this._hasKeys(context.env, res.data)) {
+            this.logError(context, request, res);
+            return;
+          }
+  
+          if (!this._dataType(context.env, res.data)) {
+            this.logError(context, request, res);
+            return;
+          }
+  
+          if (!this._extract(context.env, res.data)) {
+            this.logError(context, request, res);
+            return;
+          }
+
+        }
+  
         if (!this._extractJWT(context.env, res.data)) {
           this.logError(context, request, res);
           return;
         }
+
 
         if (!this._onPass(context.env, res.data)) {
           this.logError(context, request, res);
@@ -180,285 +70,12 @@ module.exports = class ClassTest {
 
         this.testResult.passed = (this.testResult.error.length === 0);
       } else {
-        this.testResult.error.push(`env.response.status=${res.status}; expected ${this.metaData.response.status}`);
+        this.testResult.error.push(`env.response.status=${res.status}; expected=${this.metaData.response.status}`);
         this.testResult.passed = false;
         this.logError(context, request, res);
       }
     }
   }
 
-  //-------------------------------------------------------------
-
-  _onPass(env, data) {
-    if (typeof data === "undefined" || typeof this.metaData.response[FUNCTION_ONPASS] === "undefined" || this.metaData.response[FUNCTION_ONPASS] === "") {
-      return true;
-    }
-
-    let funcSrc = this.metaData.response[FUNCTION_ONPASS];
-    if (this.metaData.response[FUNCTION_ONPASS].startsWith("file://")) {
-      let jsFile = this.localPath + this.metaData.response[FUNCTION_ONPASS].substring("file://".length);
-
-      try {
-        funcSrc = fs.readFileSync(jsFile, "utf8");
-        funcSrc = FUNCTION_HELPER + funcSrc + "\r\nonPass(env,data)";
-      } catch (e) {
-        this.testResult.error.push("onPass: failToLoad(" + jsFile + "): " + e);
-        return;
-      }
-    } else {
-      funcSrc = FUNCTION_HELPER + FUNCTION_ONPASS + "{" + funcSrc + "};  onPass(env,data);";
-    }
-
-    try {
-      eval(funcSrc);
-    } catch (e) {
-      if (e.message) {
-        this.testResult.error.push("onPass: fail(" + e.message + ")");
-      } else {
-        this.testResult.error.push("onPass: " + e);
-      }
-    }
-
-    return (this.testResult.error.length === 0);
-  }
-
-  //-------------------------------------------------------------
-
-  _extractJWT(env, data) {
-    if (typeof data === "undefined" || typeof this.metaData.response.extractJWT === "undefined") {
-      return true;
-    }
-
-    const val = this._evaluate(env, this.metaData.response.extractJWT);
-    if (val === "undefined") {
-      this.testResult.error.push("extractJWT: [" + this.metaData.response.extractJWT + "]: not found");
-    }
-
-    try {
-      env.jwtData = jwt.decode(val);
-    } catch (e) {
-      this.testResult.error.push("extractJWT: error decoding JWT packet: " + e);
-    }
-
-    return (this.testResult.error.length === 0);
-  }
-
-  //-------------------------------------------------------------
-
-  __getData(key, data) {
-
-    try {
-
-      if (key.startsWith("data[") || key.startsWith("data.")) {
-        // full path
-        return eval(key);
-      } else {
-        if (key.startsWith("'") && key.endsWith("'")) {
-          return eval("data[" + key + "]");
-        } else {
-          return eval("data." + key);
-        }
-      }
-
-    } catch (e) {
-      return UNDEFINED_OBJ;
-    }
-  }
-
-  //-------------------------------------------------------------
-
-  _dataType(env, data) {
-    if (typeof data === "undefined" || typeof this.metaData.response.dataType === "undefined") {
-      return true;
-    }
-
-    const keys = Object.keys(this.metaData.response.dataType);
-    for (const key of keys) {
-      let check = this.metaData.response.dataType[key];
-
-      if (check == null || typeof check === "string" || typeof check === "number") {
-
-        // implicit eq
-        const v = this.__getData(key, data);
-
-        if (v != null && typeof v == undefined || v === UNDEFINED_OBJ) {
-          this.testResult.error.push(`dataType: [${key}] not present`);
-        } else {
-          if (check !== null && typeof check === "string") {
-            check = this._evaluate(env, check)
-          }
-
-          if (check != v) {
-            this.testResult.error.push(`dataType: [${key}] expecting=${check}; was ${v}`);
-          }
-        }
-
-        continue;
-
-      } else {
-
-        if (typeof check.required === "undefined") {
-          check.required = false;
-        }
-
-        const v = this.__getData(key, data);
-
-        if (typeof v === "undefined" || v === UNDEFINED_OBJ) {
-          if (check.required) {
-            this.testResult.error.push("dataType: [" + key + "] required=true; not present");
-          }
-          continue;
-        } else if (typeof check.type != "undefined") {
-
-          if (typeof v !== check.type) {
-            this.testResult.error.push(`dataType: [${key}] type=${check.type}; was ${typeof v}`);
-          }
-
-        } else if (typeof check.eq != "undefined") {
-
-          let rhs = check.eq;
-          if (rhs !== null && typeof rhs === "string") {
-            rhs = this._evaluate(env, rhs);
-          }
-
-          if (rhs != v) {
-            this.testResult.error.push(`dataType: [${key}] expecting=${rhs}; was ${v}`);
-          }
-
-        }
-      }
-    }
-
-    return (this.testResult.error.length === 0);
-  }
-
-  //-------------------------------------------------------------
-
-  _hasKeys(env, data) {
-    if (typeof data === "undefined" || typeof this.metaData.response.hasKey === "undefined") {
-      return true;
-    }
-
-    for (const key of this.metaData.response.hasKey) {
-      const v = this.__getData(key, data);
-
-      if (typeof v === "undefined" || v === UNDEFINED_OBJ) {
-        this.testResult.error.push("hasKey: [" + key + "] not defined");
-      }
-    }
-
-    return (this.testResult.error.length === 0);
-  }
-
-  //-------------------------------------------------------------
-
-  _extract(env, data) {
-    if (typeof data === "undefined" || typeof this.metaData.response.extract === "undefined") {
-      return true;
-    }
-
-    const keys = Object.keys(this.metaData.response.extract);
-    for (const key of keys) {
-      try {
-        const v = this.__getData(this.metaData.response.extract[key], data);
-        if (typeof v === "undefined" || v === UNDEFINED_OBJ) {
-          this.testResult.error.push("extract: [" + key + "]: not found");
-        } else {
-          if ( typeof v === "number" ){
-            eval(key + "= " + v );
-          }else{
-            eval(key + "='" + v + "'");
-          }
-        }
-      } catch (e) {
-        this.testResult.error.push("extract: Failed to find [" + this.metaData.response.extract[key] + "] for [" + key + "]: " + e);
-      }
-    }
-
-    return (this.testResult.error.length === 0);
-  }
-
-  //-------------------------------------------------------------
-
-  _getRequestData(env) {
-    let req = {};
-
-    if (env.httpDefaults) {
-      req = Object.assign({}, env.httpDefaults);
-    }
-    req.headers = {};
-
-    // do the url
-    const url = this._evaluate(env.env, this.metaData.request.url);
-    if (url.split(" ").length === 2) {
-      req.method = url.split(" ")[0];
-      req.url = url.split(" ")[1];
-    } else {
-      req.method = "GET";
-      req.url = url;
-    }
-
-    // do the headers
-    if (env.headers) {
-      req.headers = Object.assign(req.headers, env.headers);
-    }
-
-    if (this.metaData.request.headers) {
-      req.headers = Object.assign(req.headers, this._evaluate(env.env, this.metaData.request.headers));
-    }
-
-    // do the body
-    if (this.metaData.request.body) {
-      req.data = this._evaluate(env.env, this.metaData.request.body);
-    }
-
-    return req;
-  }
-
-  //-------------------------------------------------------------
-
-  _evaluate(env, obj, prefix) {
-    if (typeof obj === "string") {
-      const rxp = /\${([^}]+)}/g;
-      let curMatch;
-
-      while (curMatch = rxp.exec(obj)) {
-
-        if (typeof prefix != "undefined") {
-          if (!curMatch[1].startsWith(prefix)) {
-            curMatch[1] = prefix + curMatch[1];
-          }
-        }
-
-        const evaluated = eval(curMatch[1]);
-        obj = obj.substring(0, curMatch.index) + evaluated + obj.substring(curMatch.index + curMatch[0].length);
-      }
-
-    } else if (Array.isArray(obj)) {
-
-      for ( let x=0; x < obj.length; x++ ){
-        obj[x] = this._evaluate( env, obj[x] );
-      }
-
-    } else if (typeof obj === "object") {
-      obj = Object.assign({}, obj);
-      this._evaluateMap(env, obj);
-    }
-
-    return obj;
-  }
-
-  //-------------------------------------------------------------
-
-  _evaluateMap(env, map) {
-    const keys = Object.keys(map);
-    for (const key of keys) {
-      if (typeof map[key] === "string") {
-        map[key] = this._evaluate(env, map[key]);
-      } else if (typeof map[key] === "object") {
-        this._evaluate(env, map[key]);
-      }
-    }
-  }
 
 }

@@ -1,0 +1,14 @@
+{
+  "name" : "Google",
+  "request": {
+    "url": "GET https://www.google.com/",
+    "params" : {
+      "q" : "javascript npm"
+    }
+  },
+  "response" : {
+    "status": 200,
+    "contentType" : "text",
+    "containsString" : "</body></html>"
+  }
+}
