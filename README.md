@@ -15,12 +15,12 @@ npm install mg-api-validator
 ```
 
 ```
-node_modules/mg-api-validator/bin/apiTest.js --config-file=./file.json test1.json test2.json
+node_modules/mg-api-validator/bin/apiTest.js config-file=./file.json test1.json test2.json
 ```
 
 ## context :: Test environment
 
-The 'env' is a special variable scope that is shared among all the tests and is a place where variables can be parked for later.  The context is loaded with the --config-file=./xyz.json command line.  An example:
+The 'env' is a special variable scope that is shared among all the tests and is a place where variables can be parked for later.  The context is loaded with the config-file=./xyz.json command line.  An example:
 
 ```
 {
@@ -198,13 +198,16 @@ A suite of tests is one where a directory of test files are all run and reported
 Running the tests is done via the command line an example:
 
 ```
-$ node_modules/mg-api-validator/bin/apiTest.js --config-file=./test-files/config.json --log-dir=/tmp/ ./some-other-test.json
+$ node_modules/mg-api-validator/bin/apiTest.js config-file=./test-files/config.json log-dir=/tmp/ ./some-other-test.json
 ```
 
-If you specify the ---log-dir, a temporary folder will be created, where any errors will be logged, with a complete dump of the request and response.
+If you specify the log-dir, a temporary folder will be created, where any errors will be logged, with a complete dump of the request and response.
 
 ## Release Notes
 
+* 2020-05-28
+  * Added script for npm
+  * Clean up formatting for semistandard
 * 2020-03-19: 
   * Added 'testImport'
   * Added 'contentType' test to the response
