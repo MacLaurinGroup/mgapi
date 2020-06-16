@@ -201,7 +201,7 @@ function displayTable (rowsOfRows, firstRow) {
 
 const main = async () => {
   try {
-    console.log('API Validator v1.0.3\r\n    (c) 2020 MacLaurin Group   https://github.com/MacLaurinGroup/mg-api-validator');
+    console.log('API Validator v1.0.6\r\n    (c) 2020 MacLaurin Group   https://github.com/MacLaurinGroup/mg-api-validator');
 
     if (process.argv.length <= 2) {
       console.log('usage: config-file=<path> [log-dir=<path>] test1 test2 test3 ...');

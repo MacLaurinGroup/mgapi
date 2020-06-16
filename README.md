@@ -94,7 +94,10 @@ Below is an example of a single test.
     "body": {
       "loginId": "${env.config.loginId}",
       "password": "${env.config.password}"
-    }
+    },
+
+    // to load the body from a file
+    "bodyFile" : "./fileToLoad.xml"
   },
 
   // details on what we expect back
@@ -205,6 +208,9 @@ If you specify the log-dir, a temporary folder will be created, where any errors
 
 ## Release Notes
 
+* 2020-06-16
+  * Clean up formatting for semistandard
+  * Added 'bodyFile' to load the request body from a file
 * 2020-05-28
   * Added script for npm
   * Clean up formatting for semistandard
