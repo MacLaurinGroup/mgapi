@@ -86,7 +86,7 @@ Below is an example of a single test.
   "request": {
 
     // custom JS handling before the request is made; see below
-    "function onPreRequest(env,req)": "file://test.js"
+    "function onPreRequest(env,req)": "file://test.js",
 
     // the url to use, with the method then the uri. can use the env vars here
     "url": "POST ${env.config.url}/public/admin-user/login",
