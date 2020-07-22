@@ -5,6 +5,8 @@ const axios = require('axios');
 const path = require('path');
 const jwt = require('jsonwebtoken');
 
+const FUNCTION_ONPREREQUEST = 'function onPreRequest(env, req)';
+
 module.exports = class ClassBaseTest {
   constructor (metaData, localPath) {
     this.localPath = localPath;
@@ -24,6 +26,7 @@ module.exports = class ClassBaseTest {
     this.metaData.response.contentType = this.metaData.response.contentType ? this.metaData.response.contentType : 'json';
     this.metaData.stopOnFail = this.metaData.stopOnFail ? this.metaData.stopOnFail : false;
     this.metaData.skipTest = this.metaData.skipTest ? this.metaData.skipTest : false;
+    this.metaData.output = this.metaData.output ? this.metaData.output : false;
   }
 
   /** -------------------------------------------------------------
@@ -40,14 +43,39 @@ module.exports = class ClassBaseTest {
     const startDate = new Date().getTime();
     context.env.__time = startDate;
 
+    if (this.metaData.output) {
+      console.log('--|| Debug Output');
+      console.log('--|| request');
+      console.log(request);
+    }
+
     try {
       const response = await axios.request(request);
       this.testResult.networkTimeMs = new Date().getTime() - startDate;
+
+      if (this.metaData.output) {
+        console.log('--|| response status=' + response.status);
+        console.log('  || headers');
+        console.log(response.headers);
+        console.log('  || data');
+        console.log(response.data);
+        console.log('--||');
+      }
 
       this._validateResponse(context, response, request);
     } catch (error) {
       if (error.response) {
         this.testResult.networkTimeMs = new Date().getTime() - startDate;
+
+        if (this.metaData.output) {
+          console.log('--|| response status=' + error.response.status);
+          console.log('  || headers');
+          console.log(error.response.headers);
+          console.log('  || data');
+          console.log(error.response.data);
+          console.log('--||');
+        }
+
         this._validateResponse(context, error.response, request);
       } else {
         console.log(error);
@@ -104,7 +132,43 @@ module.exports = class ClassBaseTest {
       req.data = fs.readFileSync(bodyPath, 'utf8');
     }
 
+    // Run the function
+    this._onPreRequest(env, req);
+
     return req;
+  }
+
+  _onPreRequest (env, req) {
+    if (typeof this.metaData.request[FUNCTION_ONPREREQUEST] === 'undefined' || this.metaData.request[FUNCTION_ONPREREQUEST] === '') {
+      return true;
+    }
+
+    let funcSrc = this.metaData.request[FUNCTION_ONPREREQUEST];
+    if (this.metaData.request[FUNCTION_ONPREREQUEST].startsWith('file://')) {
+      const jsFile = this.localPath + this.metaData.request[FUNCTION_ONPREREQUEST].substring('file://'.length);
+
+      try {
+        funcSrc = fs.readFileSync(jsFile, 'utf8');
+        funcSrc = funcSrc + '\r\nonPreRequest(env, req);';
+      } catch (e) {
+        this.testResult.error.push('onPreRequest: failToLoad(' + jsFile + '): ' + e);
+        return;
+      }
+    } else {
+      funcSrc = FUNCTION_ONPREREQUEST + '{' + funcSrc + '};  onPreRequest(env, req);';
+    }
+
+    try {
+      eval(funcSrc);
+    } catch (e) {
+      if (e.message) {
+        this.testResult.error.push('onPass: fail(' + e.message + ')');
+      } else {
+        this.testResult.error.push('onPass: ' + e);
+      }
+    }
+
+    return (this.testResult.error.length === 0);
   }
 
   // -------------------------------------------------------------
@@ -184,7 +248,7 @@ module.exports = class ClassBaseTest {
     this.logFileName = context.logDir + '/' + this.testResult.name
       .replace(/\//g, '--')
       .replace(/ /g, '_')
-      .replace(/\'/g, '_')
+      .replace(/'/g, '_')
       .replace(/"/g, '_')
       .replace(/:/g, '_')
       .replace(/{/g, '(')

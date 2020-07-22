@@ -1,10 +1,12 @@
 {
   "name" : "Google",
+  "output" : true,
   "request": {
     "url": "GET https://www.google.com/",
     "params" : {
       "q" : "javascript npm"
-    }
+    },
+    "function onPreRequest(env, req)" : "req.params.q='canada';"
   },
   "response" : {
     "status": 200,

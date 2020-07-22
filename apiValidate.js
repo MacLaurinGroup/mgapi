@@ -3,6 +3,7 @@
  */
 
 const fs = require('fs');
+const { execSync } = require('child_process');
 const ClassTestLoader = require('./src/ClassTestLoader');
 const dateFormat = require('dateformat');
 
@@ -201,10 +202,10 @@ function displayTable (rowsOfRows, firstRow) {
 
 const main = async () => {
   try {
-    console.log('API Validator v1.0.6\r\n    (c) 2020 MacLaurin Group   https://github.com/MacLaurinGroup/mg-api-validator');
+    console.log('API Validator v1.0.7\r\n    (c) 2020 MacLaurin Group   https://github.com/MacLaurinGroup/mg-api-validator');
 
     if (process.argv.length <= 2) {
-      console.log('usage: config-file=<path> [log-dir=<path>] test1 test2 test3 ...');
+      console.log('usage: [config-file=<path>] [log-dir=<path>] test1 test2 test3 ...');
       process.exit(-1);
     }
 
@@ -238,7 +239,7 @@ const main = async () => {
 
     if (testPaths.length === 0) {
       console.log('no tests specified');
-      console.log('usage: --config-file=<path> test1 test2 test3 ...');
+      console.log('usage: [--config-file=<path>] test1 test2 test3 ...');
       process.exit(-1);
     }
 
@@ -250,6 +251,21 @@ const main = async () => {
       console.log('\r\n[API Runner][testSetup] ' + f);
       await executeFile(context, getPath(context.configPath, f));
       if (stats.fail > 0) {
+        process.exit(-1);
+      }
+    }
+
+    // Perform the shell script
+    if (typeof context.execSetup === 'string' && context.execSetup !== '') {
+      console.log('\r\n[API Runner][execSetup] ' + context.execSetup);
+
+      try {
+        const stdout = execSync(context.execSetup);
+        if (typeof stdout.error !== 'undefined') {
+          throw new Error('Failed Return code:' + context.execSetup);
+        }
+      } catch (err) {
+        console.log(err.message);
         process.exit(-1);
       }
     }
@@ -273,6 +289,20 @@ const main = async () => {
       const f = context.testTearDown.substring('file://'.length);
       console.log('\r\n[API Runner][testTearDown] ' + f);
       await executeFile(context, getPath(context.configPath, f));
+    }
+
+    // Perform the shell script
+    if (typeof context.execTearDown === 'string' && context.execTearDown !== '') {
+      console.log('\r\n[API Runner][execTearDown] ' + context.execTearDown);
+
+      try {
+        const stdout = execSync(context.execTearDown);
+        if (typeof stdout.error !== 'undefined') {
+          throw new Error('Failed Return code:' + context.execTearDown);
+        }
+      } catch (err) {
+        console.log(err.message);
+      }
     }
 
     // Tests Complete

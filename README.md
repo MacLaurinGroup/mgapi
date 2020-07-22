@@ -39,8 +39,11 @@ The 'env' is a special variable scope that is shared among all the tests and is 
     "maxContentLength" : 500000
   },
 
+  "testSetup" : "file://./common/setup.json",
   "testTearDown" : "",
-  "testSetup" : "file://./common/setup.json"
+
+  "execSetup" : "ls",             // Shell script to run at start; if bad output or invalid, it stops
+  "execTearDown" : "ls"           // Shell script to run at end
 }
 ```
 
@@ -76,8 +79,14 @@ Below is an example of a single test.
   // whether or not this test will stop other tests from running if it fails
   "stopOnFail" : false,
 
+  // Logs to the console the request/response data, so it is easier to develop your tests
+  "output" : false,
+
   // details on the request
   "request": {
+
+    // custom JS handling before the request is made; see below
+    "function onPreRequest(env,req)": "file://test.js"
 
     // the url to use, with the method then the uri. can use the env vars here
     "url": "POST ${env.config.url}/public/admin-user/login",
@@ -168,6 +177,19 @@ As you build up a library of tests, you can reference them into a single suite, 
 }
 ```
 
+### function onPreRequest(env,req) { .. }
+
+You can specify custom code to be run that lets you manipulate the req before it is executed.  This function be either in-line, or placed in an additional file.   If you specify it as an external file, use ```file://``` and the path is relative to the existing test JSON file.  If you put it in a file be sure to include the function signature:
+
+```
+function onPreRequest(env,req) {
+
+}
+```
+
+You can modify the req.headers, req.data, req.params, req.url, req.method.
+
+You can also modify the env variables but these will persist across subsequent tests.
 
 
 ### function onPass(env,data)() { .. }
@@ -208,6 +230,10 @@ If you specify the log-dir, a temporary folder will be created, where any errors
 
 ## Release Notes
 
+* 2020-07-22
+  * added 'output' flag to each test
+  * added: onPreRequest(env,req)
+  * added: execSetup / execTearDown for scripts
 * 2020-06-16
   * Clean up formatting for semistandard
   * Added 'bodyFile' to load the request body from a file
