@@ -22,6 +22,10 @@ module.exports = class ClassBaseTest {
     };
 
     // Default some values
+    this.metaData.response = this.metaData.response ? this.metaData.response : {};
+
+    this.suggestMode = Object.keys(this.metaData.response).length === 0;
+
     this.metaData.response.status = this.metaData.response.status ? this.metaData.response.status : -1;
     this.metaData.response.contentType = this.metaData.response.contentType ? this.metaData.response.contentType : 'json';
     this.metaData.stopOnFail = this.metaData.stopOnFail ? this.metaData.stopOnFail : false;
@@ -62,6 +66,9 @@ module.exports = class ClassBaseTest {
         console.log('--||');
       }
 
+      if (this.suggestMode) {
+        require('./suggest').doSuggestion(response);
+      }
       this._validateResponse(context, response, request);
     } catch (error) {
       if (error.response) {
