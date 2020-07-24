@@ -8,6 +8,35 @@ Tests can be run individually, or as part of a single suite where all the test f
 
 You can optionally log out the request/response upon failure into a folder for later investigation.
 
+Sample output:
+
+```
+API Validator v1.0.7
+    (c) 2020 MacLaurin Group   https://github.com/MacLaurinGroup/mg-api-validator
+
+
+[API Runner][testSetup] ../../../core/api/test-api/common/000-login-city-refresh.json
+--\\ POST /core/public/oauth/city/login
+  // [PASS] ContentLength=444; networkTime=1529ms; testTime=1530ms
+
+--\\ POST /core/public/oauth/city/refresh
+  // [PASS] ContentLength=444; networkTime=214ms; testTime=214ms
+
+--\\ fam - service code
+  // [PASS] ContentLength=29; networkTime=637ms; testTime=637ms
+
+
+
+[API Runner] Complete
++--------+-------+--------+--------+----------+--------------+-----------+
+| Status | Tests | Passed | Failed | Bytes In | Network (ms) | Test (ms) |
++--------+-------+--------+--------+----------+--------------+-----------+
+|   PASS |     3 |      3 |      0 |        0 |         2380 |      2381 |
++--------+-------+--------+--------+----------+--------------+-----------+
+
+```
+
+
 ## Installation
 
 ```
