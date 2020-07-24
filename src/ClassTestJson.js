@@ -28,7 +28,7 @@ module.exports = class ClassTestJson extends require('./ClassBaseTest') {
         // implicit eq
         const v = this.__getData(key, data);
 
-        if (v != null && typeof v === 'undefined' || v === UNDEFINED_OBJ) {
+        if (v != null && (typeof v === 'undefined' || v === UNDEFINED_OBJ)) {
           this.testResult.error.push(`dataType: [${key}] not present`);
         } else {
           if (check !== null && typeof check === 'string') {
