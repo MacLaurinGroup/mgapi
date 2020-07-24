@@ -1,5 +1,6 @@
 'use strict;';
 
+const fs = require('fs');
 const UNDEFINED_OBJ = {};
 
 const FUNCTION_ONPASS = 'function onPass(env,data)';
