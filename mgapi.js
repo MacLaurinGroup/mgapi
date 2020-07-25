@@ -6,6 +6,7 @@ const fs = require('fs');
 const { execSync } = require('child_process');
 const ClassTestLoader = require('./src/ClassTestLoader');
 const dateFormat = require('dateformat');
+const banner = 'MGAPI v1.0.9\r\n  (c) 2020 MacLaurin Group https://github.com/MacLaurinGroup/mgapi';
 
 // Default environment
 let context = {
@@ -93,7 +94,7 @@ async function executeSuite (context, filePath) {
     console.log('   ~~~ Test has: stopOnFail=true; further tests stopped in suite');
   }
 
-  console.log('\r\n[API Runner][Suite] Complete ' + filePath);
+  console.log('\r\n[MGAPI][Suite] Complete ' + filePath);
 
   console.log(displayTable([
     ['Status', 'Tests', 'Passed', 'Failed', 'Bytes In', 'Network (ms)', 'Test (ms)'],
@@ -202,7 +203,7 @@ function displayTable (rowsOfRows, firstRow) {
 
 const main = async () => {
   try {
-    console.log('API Validator v1.0.7\r\n    (c) 2020 MacLaurin Group   https://github.com/MacLaurinGroup/mg-api-validator');
+    console.log(banner);
 
     if (process.argv.length <= 2) {
       console.log('usage: [config-file=<path>] [log-dir=<path>] test1 test2 test3 ...');
@@ -239,7 +240,7 @@ const main = async () => {
 
     if (testPaths.length === 0) {
       console.log('no tests specified');
-      console.log('usage: [--config-file=<path>] test1 test2 test3 ...');
+      console.log('usage: [config-file=<path>] test1 test2 test3 ...');
       process.exit(-1);
     }
 
@@ -248,7 +249,7 @@ const main = async () => {
     // Perform the setup
     if (typeof context.testSetup === 'string' && context.testSetup !== '') {
       const f = context.testSetup.substring('file://'.length);
-      console.log('\r\n[API Runner][testSetup] ' + f);
+      console.log('\r\n[MGAPI][testSetup] ' + f);
       await executeFile(context, getPath(context.configPath, f));
       if (stats.fail > 0) {
         process.exit(-1);
@@ -257,7 +258,7 @@ const main = async () => {
 
     // Perform the shell script
     if (typeof context.execSetup === 'string' && context.execSetup !== '') {
-      console.log('\r\n[API Runner][execSetup] ' + context.execSetup);
+      console.log('\r\n[MGAPI][execSetup] ' + context.execSetup);
 
       try {
         const stdout = execSync(context.execSetup);
@@ -287,13 +288,13 @@ const main = async () => {
     // Perform the testTearDown
     if (typeof context.testTearDown === 'string' && context.testTearDown !== '') {
       const f = context.testTearDown.substring('file://'.length);
-      console.log('\r\n[API Runner][testTearDown] ' + f);
+      console.log('\r\n[MGAPI][testTearDown] ' + f);
       await executeFile(context, getPath(context.configPath, f));
     }
 
     // Perform the shell script
     if (typeof context.execTearDown === 'string' && context.execTearDown !== '') {
-      console.log('\r\n[API Runner][execTearDown] ' + context.execTearDown);
+      console.log('\r\n[MGAPI][execTearDown] ' + context.execTearDown);
 
       try {
         const stdout = execSync(context.execTearDown);
@@ -306,7 +307,7 @@ const main = async () => {
     }
 
     // Tests Complete
-    console.log('\r\n\r\n[API Runner] Complete');
+    console.log('\r\n\r\n[MGAPI] Complete');
 
     console.log(displayTable([
       ['Status', 'Tests', 'Passed', 'Failed', 'Bytes In', 'Network (ms)', 'Test (ms)'],

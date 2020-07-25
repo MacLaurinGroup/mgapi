@@ -13,11 +13,11 @@ Writing tests couldn't be easier - if you don't include any expected output, the
 Sample output:
 
 ```
-API Validator v1.0.8
-  (c) 2020 MacLaurin Group   https://github.com/MacLaurinGroup/mgapi
+MGAPI Validator v1.0.9
+  (c) 2020 MacLaurin Group  https://github.com/MacLaurinGroup/mgapi
 
 
-[API Runner][testSetup] ../../../core/api/test-api/common/000-login-refresh.json
+[MGAPI][testSetup] ../../../core/api/test-api/common/000-login-refresh.json
 --\\ POST /core/public/oauth/login
   // [PASS] ContentLength=444; networkTime=1529ms; testTime=1530ms
 
@@ -29,7 +29,7 @@ API Validator v1.0.8
 
 
 
-[API Runner] Complete
+[MGAPI] Complete
 +--------+-------+--------+--------+----------+--------------+-----------+
 | Status | Tests | Passed | Failed | Bytes In | Network (ms) | Test (ms) |
 +--------+-------+--------+--------+----------+--------------+-----------+
