@@ -274,12 +274,12 @@ You can modify the req.headers, req.data, req.params, req.url, req.method.
 You can also modify the env variables but these will persist across subsequent tests.
 
 
-### function onPass(env,data)() { .. }
+### function onPass(env,data) { .. }
 
 You can specify a custom function for each test, that is run after all the checks are performed.  This function be either in-line, or placed in an additional file.   If you specify it as an external file, use ```file://``` and the path is relative to the existing test JSON file.  If you put it in a file be sure to include the function signature:
 
 ```
-function onPass(env,data)() {
+function onPass(env,data) {
   if ( typeof data.access === "undefined" ){
     fail("uh hu");
   }
