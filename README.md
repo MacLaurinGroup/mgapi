@@ -305,10 +305,26 @@ A suite of tests is one where a directory of test files are all run and reported
 Running the tests is done via the command line an example:
 
 ```
-$ node_modules/mgapi/bin/apiTest.js config-file=./test-files/config.json log-dir=/tmp/ ./some-other-test.json
+$ node_modules/mgapi/bin/mgapi.js config-file=./test-files/config.json log-dir=/tmp/ ./some-other-test.json
 ```
 
 If you specify the log-dir, a temporary folder will be created, where any errors will be logged, with a complete dump of the request and response.
+
+## adding to npm
+
+You can easily add mgapi to the package.json
+
+```
+"scripts": {
+  "api-test": "mgapi config-file=./test-api/config-dev-city-auth.json"
+}
+```
+
+Then you can use:
+
+```
+$ npm run api-test ./testsuite/test-001-mytest.json
+```
 
 ## Release Notes
 
