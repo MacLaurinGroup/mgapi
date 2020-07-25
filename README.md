@@ -1,25 +1,27 @@
-# mg-api-validator
+# mgapi
 
-Testing API endpoints, can be as simple as sending a payload and checking the return.  This package builds on that simple premise and delivers a simple, yet powerful, small test-suite runner that lets you test API endpoints, by sending data and inspecting the results.   Controlled via JSON files, there is zero need for any programming.   Though, there is the ability to attach a custom function to do further testing on a given response if required.
+Testing API endpoints, can be as simple as sending a payload and checking the return.  This package builds on that simple premise and delivers a simple, yet powerful, small test-suite runner that lets you test API endpoints, by sending data and inspecting the results.   Controlled via JSON files, there is zero need for any programming.   Though, there is the ability to attach a custom function to do further testing on a given response if required.  It will even write the tests for you, all you have to do is to tell which endpoint you are testing.
 
-The MG-API-VALIDATOR also lets you extract data out of the response, to use in a subsequent response.  So if you create an object, get an ID returned, you can easily grab that ID, and use it in a subsequent call.
+The mgapi lets you extract data out of the response, to use in a subsequent requests.  For example if you create an object, get an ID returned, you can easily grab that ID, and use it in a subsequent call.   All without Javascript coding.
 
 Tests can be run individually, or as part of a single suite where all the test files belong in a single directory (marked *-test.json or test-*.json).
 
 You can optionally log out the request/response upon failure into a folder for later investigation.
 
+Writing tests couldn't be easier - if you don't include any expected output, then mgapi will suggest a complete response block for you.  See below for details.
+
 Sample output:
 
 ```
-API Validator v1.0.7
-    (c) 2020 MacLaurin Group   https://github.com/MacLaurinGroup/mg-api-validator
+API Validator v1.0.8
+  (c) 2020 MacLaurin Group   https://github.com/MacLaurinGroup/mgapi
 
 
-[API Runner][testSetup] ../../../core/api/test-api/common/000-login-city-refresh.json
---\\ POST /core/public/oauth/city/login
+[API Runner][testSetup] ../../../core/api/test-api/common/000-login-refresh.json
+--\\ POST /core/public/oauth/login
   // [PASS] ContentLength=444; networkTime=1529ms; testTime=1530ms
 
---\\ POST /core/public/oauth/city/refresh
+--\\ POST /core/public/oauth/refresh
   // [PASS] ContentLength=444; networkTime=214ms; testTime=214ms
 
 --\\ fam - service code
@@ -40,11 +42,11 @@ API Validator v1.0.7
 ## Installation
 
 ```
-npm install mg-api-validator
+npm install mgapi
 ```
 
 ```
-node_modules/mg-api-validator/bin/apiTest.js config-file=./file.json test1.json test2.json
+node_modules/mgapi/bin/apiTest.js config-file=./file.json test1.json test2.json
 ```
 
 ## context :: Test environment
@@ -160,14 +162,14 @@ Below is an example of a single test.
     "dataType": {
       "access": {
 
-        // the type of the object; string/number supported
-        "type": "string",
+        // the type of the object; string/number/object/array/boolean
+        "typeof": "string",
 
         // if the parameter should be there
         "required": true
       },
       "serverTime": {
-        "type": "number",
+        "typeof": "number",
         "required": true,
 
         // value has to equal; supports the ${} syntax
@@ -196,7 +198,7 @@ Few notes on the checking for the response body
 
 * for simple keys, you can specify the name implicitly
 * for simple keys with a period in it, you can single quote the name;  eg "'ca.name'"
-* for complex keys, you can fully qualify it; "data['ca.name'].first"
+* for complex keys, you can fully qualify it; "data['ca.name'].first" / data['person_phone'][1]['person_phone.created_ts']
 
 As you build up a library of tests, you can reference them into a single suite, by using the 'testImport' keyword inside a test file.   This will load the file referenced, relative to the current test file, and run that as part of the suite.
 
@@ -205,6 +207,57 @@ As you build up a library of tests, you can reference them into a single suite, 
   "testImport" : "../common/another-test.json"
 }
 ```
+
+### Automatic Test Generation
+
+As you develop tests, it is worth testing everything and setting that up can take some time, especially if you have complicated response packets - let mgapi help you there.
+
+For a given test, if you only supply the 'request' and leave the 'response' out, then mgapi will execute the test (pass it), but will output a suggestion for the 'response' JSON that
+you can copy'n'paste and put into your test file.   It will be comprehensive, looking for every key, checking every data type, making sure each value is as it should be.  In most cases
+this will probably be a little too much, but you can then go through and quickly edit the bits you don't need to check, or remove bits of a check (for example if you dates coming back you may just want to check for the existance instead of the literal value).
+
+An example output from a test without a 'response' defintion.
+
+```
+--\\ GET /profile/
+  ||
+  || Suggested 'response' JSON for this test
+
+  "response": {
+    "status": 200,
+    "function onPass(env,data)": "",
+    "contentType": "application/json; charset=utf-8",
+    "hasKey": [
+      "data['person.id']",
+      "data['person.created_ts']",
+      "data['person.created_person_id']"
+    ],
+    "dataType": {
+      "data['person.id']": {
+        "required": true,
+        "typeof": "number",
+        "eq": 3
+      },
+      "data['person.created_ts']": {
+        "required": true,
+        "typeof": "string",
+        "eq": "2020-07-02T20:20:28.872Z"
+      },
+      "data['person.created_person_id']": {
+        "required": true,
+        "typeof": "number",
+        "eq": 1
+      }
+    },
+    "extract": {},
+    "extractJWT": ""
+  }
+```
+
+If your response is text (html or plain) then it will suggest  a 'containsString' block looking for the first 32 characters.
+
+This is a very quick way to write full tests, giving you a complete starter block, with all the possible combinations, that you can then leave as-is or edit.
+
 
 ### function onPreRequest(env,req) { .. }
 
@@ -252,13 +305,17 @@ A suite of tests is one where a directory of test files are all run and reported
 Running the tests is done via the command line an example:
 
 ```
-$ node_modules/mg-api-validator/bin/apiTest.js config-file=./test-files/config.json log-dir=/tmp/ ./some-other-test.json
+$ node_modules/mgapi/bin/apiTest.js config-file=./test-files/config.json log-dir=/tmp/ ./some-other-test.json
 ```
 
 If you specify the log-dir, a temporary folder will be created, where any errors will be logged, with a complete dump of the request and response.
 
 ## Release Notes
 
+* 2020-07-25
+  * Automatic suggestion for response
+  * All data types now supported
+  * Small code cleanup
 * 2020-07-22
   * added 'output' flag to each test
   * added: onPreRequest(env,req)

@@ -223,7 +223,9 @@ module.exports = class ClassBaseTest {
   // -------------------------------------------------------------
 
   _extractJWT (env, data) {
-    if (typeof data === 'undefined' || typeof this.metaData.response.extractJWT === 'undefined') {
+    if (typeof data === 'undefined' ||
+      typeof this.metaData.response.extractJWT === 'undefined' ||
+      this.metaData.response.extractJWT === '') {
       return true;
     }
 

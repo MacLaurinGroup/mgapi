@@ -1,16 +1,16 @@
 {
-    "name": "mg-api-validator",
+    "name": "mgapi",
     "private": false,
-    "version": "1.0.7",
-    "homepage": "https://github.com/MacLaurinGroup/mg-api-validator",
-    "description": "Create and manage an API suite of tests without using any code",
+    "version": "1.0.8",
+    "homepage": "https://github.com/MacLaurinGroup/mgapi",
+    "description": "Create and manage an API suite of tests without using any code.  It will even create the tests for you.",
     "main": "index.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/MacLaurinGroup/mg-api-validator"
+        "url": "https://github.com/MacLaurinGroup/mgapi"
     },
     "keywords": [
         "api",

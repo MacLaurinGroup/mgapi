@@ -15,6 +15,11 @@ const FUNCTION_HELPER = `
 module.exports = class ClassTestJson extends require('./ClassBaseTest') {
   // -------------------------------------------------------------
 
+  isSimple (data) {
+    const dt = Array.isArray(data) ? 'array' : typeof (data);
+    return (dt !== 'object' && dt !== 'array');
+  }
+
   _dataType (env, data) {
     if (typeof data === 'undefined' || typeof this.metaData.response.dataType === 'undefined') {
       return true;
@@ -22,49 +27,53 @@ module.exports = class ClassTestJson extends require('./ClassBaseTest') {
 
     const keys = Object.keys(this.metaData.response.dataType);
     for (const key of keys) {
-      let check = this.metaData.response.dataType[key];
+      let dataType = this.metaData.response.dataType[key];
 
-      if (check == null || typeof check === 'string' || typeof check === 'number') {
-        // implicit eq
-        const v = this.__getData(key, data);
+      // Let us see if this is an implicit 'eq'
+      if (dataType == null || this.isSimple(dataType)) {
+        const value = this.__getData(key, data);
 
-        if (v != null && (typeof v === 'undefined' || v === UNDEFINED_OBJ)) {
+        if (value != null && (typeof value === 'undefined' || value === UNDEFINED_OBJ)) {
           this.testResult.error.push(`dataType: [${key}] not present`);
         } else {
-          if (check !== null && typeof check === 'string') {
-            check = this._evaluate(env, check);
+          if (dataType !== null) { // evaluate for any dynamic variables
+            dataType = this._evaluate(env, dataType);
           }
 
-          if (check !== v) {
-            this.testResult.error.push(`dataType: [${key}] expecting=${check}; was ${v}`);
+          if (dataType !== value) {
+            this.testResult.error.push(`dataType[${key}] expecting=${dataType}; was ${value}`);
           }
         }
-
-        continue;
       } else {
-        if (typeof check.required === 'undefined') {
-          check.required = false;
-        }
+        const value = this.__getData(key, data);
 
-        const v = this.__getData(key, data);
+        if (typeof value === 'undefined' || value === UNDEFINED_OBJ) { // if this value is not present
+          dataType.required = (typeof dataType.required === 'undefined') ? false : dataType.required;
 
-        if (typeof v === 'undefined' || v === UNDEFINED_OBJ) {
-          if (check.required) {
-            this.testResult.error.push('dataType: [' + key + '] required=true; not present');
+          if (dataType.required) {
+            this.testResult.error.push('dataType[' + key + '] required=true; not present');
           }
           continue;
-        } else if (typeof check.type !== 'undefined') {
-          if (typeof v !== check.type) {
-            this.testResult.error.push(`dataType: [${key}] type=${check.type}; was ${typeof v}`);
+        }
+
+        if (dataType.typeof) {
+          const valueTypeOf = Array.isArray(value) ? 'array' : typeof (value);
+
+          if (valueTypeOf !== dataType.typeof) {
+            this.testResult.error.push(`dataType[${key}] wrong type; expecting type=${dataType.typeof}; was ${valueTypeOf}`);
+            continue;
           }
-        } else if (typeof check.eq !== 'undefined') {
-          let rhs = check.eq;
-          if (rhs !== null && typeof rhs === 'string') {
-            rhs = this._evaluate(env, rhs);
+        }
+
+        if (dataType.eq) {
+          let expectedValue = dataType.eq;
+
+          if (expectedValue != null && this.isSimple(expectedValue)) {
+            expectedValue = this._evaluate(env, expectedValue);
           }
 
-          if (rhs !== v) {
-            this.testResult.error.push(`dataType: [${key}] expecting=${rhs}; was ${v}`);
+          if (value !== expectedValue) {
+            this.testResult.error.push(`dataType[${key}] expecting=${value}; was ${expectedValue}`);
           }
         }
       }
@@ -141,7 +150,9 @@ module.exports = class ClassTestJson extends require('./ClassBaseTest') {
   // -------------------------------------------------------------
 
   _onPass (env, data) {
-    if (typeof data === 'undefined' || typeof this.metaData.response[FUNCTION_ONPASS] === 'undefined' || this.metaData.response[FUNCTION_ONPASS] === '') {
+    if (typeof data === 'undefined' ||
+      typeof this.metaData.response[FUNCTION_ONPASS] === 'undefined' ||
+      this.metaData.response[FUNCTION_ONPASS] === '') {
       return true;
     }
 
