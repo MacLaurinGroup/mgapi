@@ -328,6 +328,8 @@ $ npm run api-test ./testsuite/test-001-mytest.json
 
 ## Release Notes
 
+* 2020-07-27
+  * Fixed regex reset
 * 2020-07-25
   * Automatic suggestion for response
   * All data types now supported

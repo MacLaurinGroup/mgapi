@@ -1,7 +1,7 @@
 {
     "name": "mgapi",
     "private": false,
-    "version": "1.0.9",
+    "version": "1.0.10",
     "homepage": "https://github.com/MacLaurinGroup/mgapi",
     "description": "Create and manage an API suite of tests without using any code.  It will even create the tests for you.",
     "main": "mgapi.js",

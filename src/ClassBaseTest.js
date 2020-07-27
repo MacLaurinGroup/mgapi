@@ -83,6 +83,10 @@ module.exports = class ClassBaseTest {
           console.log('--||');
         }
 
+        if (this.suggestMode) {
+          require('./suggest').doSuggestion(error.response);
+        }
+
         this._validateResponse(context, error.response, request);
       } else {
         console.log(error);
@@ -183,9 +187,9 @@ module.exports = class ClassBaseTest {
   _evaluate (env, obj, prefix) {
     if (typeof obj === 'string') {
       const rxp = /\${([^}]+)}/g;
-      let curMatch;
+      let curMatch = rxp.exec(obj);
 
-      while (curMatch = rxp.exec(obj)) {
+      while (curMatch) {
         if (typeof prefix !== 'undefined') {
           if (!curMatch[1].startsWith(prefix)) {
             curMatch[1] = prefix + curMatch[1];
@@ -194,6 +198,9 @@ module.exports = class ClassBaseTest {
 
         const evaluated = eval(curMatch[1]);
         obj = obj.substring(0, curMatch.index) + evaluated + obj.substring(curMatch.index + curMatch[0].length);
+
+        rxp.lastIndex = 0;
+        curMatch = rxp.exec(obj);
       }
     } else if (Array.isArray(obj)) {
       for (let x = 0; x < obj.length; x++) {
