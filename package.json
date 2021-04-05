@@ -23,10 +23,10 @@
     },
     "author": "MacLaurin Group",
     "dependencies": {
-        "axios": "^0.18.0",
-        "mustache": "^4.0.0",
+        "axios": "^0.21.1",
+        "dateformat": "^3.0.3",
         "jsonwebtoken": "^8.3.0",
-        "dateformat": "^3.0.3"
+        "mustache": "^4.0.0"
     },
     "url": "https://maclaurin.group/",
     "license": "Apache-2.0"
